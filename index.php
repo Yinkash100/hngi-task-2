@@ -4,11 +4,10 @@ $fileLoction = './scripts';
 $filesArray = scandir($fileLoction);
 
 foreach($filesArray as $currentFile){
-   
    /** If the file is not system generted */
    if (substr($currentFile, 0, 1) !== ".") {
-      $fileExtension = pathinfo($currentFile, PATHINFO_EXTENSION);
-      $scriptOutput = getFileOutput($fileExtension, $currentFile);
+      
+      $scriptOutput = getFileOutput($currentFile);
       $scriptStatus = compareOutputs($scriptOutput);
       echo $scriptStatus;
       /** 
@@ -47,32 +46,48 @@ function compareOutputs ($userScriptOutput){;
 
 }
 
-function getFileOutput($ext, $currentFile) {
-   /**  php Jv */
-   $prefix = "";
-   if ($ext === "py") {
+function getFileOutput($currentFile) {
+   $fileExtension = pathinfo($currentFile, PATHINFO_EXTENSION);
+   
+   /** TODO  pearl fortran TypeScript */
+   $out = "";
+   $pathtToScripts = ' ./scripts/';
+   if ($fileExtension === "py") {
       $prefix = 'python3';
+      $out = exec($prefix .$pathtToScripts. $currentFile);
    }
-   elseif  ($ext === 'js'){
+   elseif  ($fileExtension === 'js'){
       $prefix = 'node';
+      $out = exec($prefix .$pathtToScripts. $currentFile);
    }
-   elseif ($ext === 'php'){
-      $prefix = php;
+   elseif ($fileExtension === 'php'){
+      $prefix = 'php';
+      $out = exec($prefix .$pathtToScripts . $currentFile);
+   }
+   elseif($fileExtension === 'java'){
+      // exec('cd ./scripts');
+      // echo exec('ls');
+      // exec('javac '.$pathtToScripts . $currentFile);
+      // $fileName = pathinfo($currentFile, PATHINFO_FILENAME);
+      // exec('cd ./scripts');
+      // echo 'dir contins   '.   exec('ls');
+      // $out = exec('java ' . $fileName);
+      // exec('rm -f '.$fileName . '.class');
+      $out = 'failed';
+
    }
    else{
-      return 'fail';
+      $out = 'fail';
    }
-   return exec($prefix .' ./scripts/' . $currentFile);
-      
- 
+   return $out;
 }
 
 function parseHtml(){
 
 }
 
-function parseJson(){
-   $out = explode(' ', );
+function parseJson($input){
+   $out = explode(' ', $input);
    if(isset($out)){
    //   $output = array("name" => $out[4], "id"=> $out[8], "language"=>$out[11]);
       $outJson = json_encode($output);
