@@ -1,37 +1,68 @@
 <?php
 
+$outputJsonFile = 'script_output.json';
+exec('rm -f '.$outputJsonFile);
+
+
 $fileLoction = './scripts';
 $filesArray = scandir($fileLoction);
+$finalJsonObjectArray = array('[');
+
 
 foreach($filesArray as $currentFile){
    /** If the file is not system generted */
    if (substr($currentFile, 0, 1) !== ".") {
       
       $scriptOutput = getFileOutput($currentFile);
-      $scriptStatus = compareOutputs($scriptOutput);
-      echo $scriptStatus;
-      /** 
-      if(){
-         parseJson()
-      }
-      else{
-         parseHtml()
-      }
-      */
+      
+      $scriptOutputArray = explode(' ', $scriptOutput);
+      $scriptOutputArray = allowMultipleNames($scriptOutputArray);
+      $scriptStatus = compareOutputs($scriptOutputArray);
+      $scriptJsonObject = parseJson($currentFile, $scriptOutput, $scriptOutputArray, $scriptStatus);
+      
+      
    }
 }
+array_pop($finalJsonObjectArray);    // removes the final comma from the objects
+$finalJsonObjectArray[] = ']';
+file_put_contents($outputJsonFile, $finalJsonObjectArray);
 
-function compareOutputs ($userScriptOutput){;
-   $mainString = 'Hello World, this is [fullname] with HNGi7 ID [ID] using [language] for stage 2 task';
+function allowMultipleNames($scriptOutputArray){
+
+   $continuation = 0;   //gets the next value after name(s)
+
+   for($i = 0; $i<count($scriptOutputArray); $i++){
+      if($scriptOutputArray[$i] === 'with'){
+         $continuation = $i;
+      break;
+      }
+   }
+   if($continuation < 5 && $continuation > 7){
+      return 'fail';
+   }elseif($continuation === 6){
+      $scriptOutputArray[4] = $scriptOutputArray[4]. ' '. $scriptOutputArray[5];
+      array_splice($scriptOutputArray, 5, 1);
+   }
+   elseif($continuation === 7){
+      $scriptOutputArray[4] = $scriptOutputArray[4]. ' '. $scriptOutputArray[5].' '.$scriptOutputArray[6];
+      array_splice($scriptOutputArray, 5, 2);
+   }
+
+   return $scriptOutputArray;
+}
+
+function compareOutputs ($scriptOutputArray){
+   $mainString = 'Hello World, this is [fullname] with HNGi7 ID [ID] using [language] for stage 2 task email';
    $mainStringArray = explode(' ', $mainString);
+      
    
-   $userScriptOutputArray = explode(' ', $userScriptOutput);
-   $userScriptOutputArray;
-   if(count($mainStringArray) === count($userScriptOutputArray)){
-      $out1 = array_splice($userScriptOutputArray, 0, 4) === array_splice($mainStringArray, 0, 4);
-      $out2 = array_splice($userScriptOutputArray, 1, 3) === array_splice($mainStringArray, 1, 3);
-      $out3 = array_splice($userScriptOutputArray, 2, 1) === array_splice($mainStringArray, 2, 1); 
-      $out4 = array_splice($userScriptOutputArray, 3, 6) === array_splice($mainStringArray, 3, 6);
+
+   if(count($mainStringArray) === count($scriptOutputArray)){
+      $out1 = array_splice($scriptOutputArray, 0, 4) === array_splice($mainStringArray, 0, 4);
+      $out2 = array_splice($scriptOutputArray, 1, 3) === array_splice($mainStringArray, 1, 3);
+      $out3 = array_splice($scriptOutputArray, 2, 1) === array_splice($mainStringArray, 2, 1);
+      $out4 = array_splice($scriptOutputArray, 3, 4) === array_splice($mainStringArray, 3, 4);
+                
       if ($out1 && $out2 && $out3 && $out4){
          return 'pass';
       }
@@ -65,16 +96,12 @@ function getFileOutput($currentFile) {
       $out = exec($prefix .$pathtToScripts . $currentFile);
    }
    elseif($fileExtension === 'java'){
-      // exec('cd ./scripts');
-      // echo exec('ls');
-      // exec('javac '.$pathtToScripts . $currentFile);
-      // $fileName = pathinfo($currentFile, PATHINFO_FILENAME);
-      // exec('cd ./scripts');
-      // echo 'dir contins   '.   exec('ls');
-      // $out = exec('java ' . $fileName);
-      // exec('rm -f '.$fileName . '.class');
-      $out = 'failed';
-
+      chdir('scripts');
+      exec('javac ' . $currentFile);
+      $fileName = pathinfo($currentFile, PATHINFO_FILENAME);
+      $out = exec('java ' . $fileName);
+      exec('rm -f '.$fileName . '.class');
+      chdir('../');
    }
    else{
       $out = 'fail';
@@ -86,13 +113,20 @@ function parseHtml(){
 
 }
 
-function parseJson($input){
-   $out = explode(' ', $input);
-   if(isset($out)){
-   //   $output = array("name" => $out[4], "id"=> $out[8], "language"=>$out[11]);
-      $outJson = json_encode($output);
-      echo $outJson;
-   }   
+function parseJson($currentFile, $scriptOutput, $scriptOutputArray, $scriptStatus){
+  global $finalJsonObjectArray;
+
+  $jsonOutput = array("file"=> $currentFile,
+    "output"=> $scriptOutput,
+    "name"=> $scriptOutputArray[4],
+    "id"=> $scriptOutputArray[8],
+    "email"=> $scriptOutputArray[15],
+    "language"=> $scriptOutputArray[10],
+    "status"=> $scriptStatus
+   );
+   $jsonOutput = json_encode($jsonOutput);
+   $finalJsonObjectArray[] =  $jsonOutput; 
+   $finalJsonObjectArray[] = ',';
 }
 
 ?>
